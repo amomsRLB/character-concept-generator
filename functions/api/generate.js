@@ -17,7 +17,7 @@ export async function onRequestOptions() {
 
 export async function onRequestPost({ request, env }) {
   try {
-    const { prompt, max_tokens = 2000 } = await request.json();
+    const { prompt, max_tokens = 1000 } = await request.json();
 
     if (!prompt) {
       return new Response(JSON.stringify({ error: 'No prompt provided' }), {
