@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Character Bible Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── TOKENS ── */
+:root {
+  --black:    #0f0f0f;
+  --offblack: #1c1c1c;
+  --white:    #ffffff;
+  --offwhite: #f8f7f5;
+  --gold:     #c9a84c;
+  --gold-light:#e2c97e;
+  --gold-pale: #f5eacc;
+  --mid:      #4a4a4a;
+  --light:    #9a9a9a;
+  --border:   #e0ddd8;
+  --radius:   3px;
+}
+
+/* ── BASE ── */
+body {
+  background: var(--offwhite);
+  color: var(--offblack);
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── LAYOUT ── */
+.app-wrap {
+  display: grid;
+  grid-template-columns: 330px 1fr;
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  background: var(--black);
+  color: var(--white);
+  padding: 32px 24px 40px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.logo { border-bottom: 1px solid rgba(201,168,76,0.3); padding-bottom: 18px; }
+.logo-mark { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+.logo h1 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--white); line-height: 1.2; }
+.logo p { font-size: 12px; color: var(--light); margin-top: 4px; }
+
+.field-group { display: flex; flex-direction: column; gap: 13px; }
+.field label {
+  display: block; font-size: 10px; letter-spacing: 2.5px;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 5px; font-weight: 600;
+}
+.field select, .field input[type="text"] {
+  width: 100%; padding: 9px 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius); color: var(--white);
+  font-family: 'Source Sans 3', sans-serif; font-size: 14px;
+  appearance: none; cursor: pointer; transition: border-color 0.2s;
+}
+.field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23c9a84c'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px;
+}
+.field select:focus, .field input:focus { outline: none; border-color: var(--gold); }
+.field select option { background: #1c1c1c; }
+.field input::placeholder { color: rgba(255,255,255,0.25); }
+
+/* Author override */
+.override-box {
+  background: rgba(201,168,76,0.08);
+  border: 1px solid rgba(201,168,76,0.35);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.override-box .override-note {
+  font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 6px; line-height: 1.5;
+}
+.override-box textarea {
+  width: 100%; padding: 9px 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius); color: var(--white);
+  font-family: 'Source Sans 3', sans-serif; font-size: 13px;
+  resize: vertical; min-height: 72px; line-height: 1.5;
+  transition: border-color 0.2s;
+}
+.override-box textarea:focus { outline: none; border-color: var(--gold); }
+.override-box textarea::placeholder { color: rgba(255,255,255,0.22); font-style: italic; }
+.override-active-badge {
+  display: inline-block; background: var(--gold); color: var(--black);
+  font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 2px; margin-left: 8px; vertical-align: middle;
+}
+
+/* Pills */
+.pill-set { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill {
+  padding: 5px 11px; border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px; font-size: 12px; color: rgba(255,255,255,0.65);
+  cursor: pointer; background: transparent; transition: all 0.18s;
+  font-family: 'Source Sans 3', sans-serif;
+}
+.pill.active { background: var(--gold); border-color: var(--gold); color: var(--black); font-weight: 600; }
+.pill:hover:not(.active) { border-color: var(--gold); color: var(--gold); }
+
+/* Name style pills — wider labels */
+.name-pill-set { display: flex; flex-direction: column; gap: 5px; }
+.name-pill {
+  padding: 7px 12px; border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--radius); font-size: 12px; color: rgba(255,255,255,0.65);
+  cursor: pointer; background: transparent; transition: all 0.18s;
+  font-family: 'Source Sans 3', sans-serif; text-align: left;
+  display: flex; flex-direction: column; gap: 1px;
+}
+.name-pill strong { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.85); }
+.name-pill span { font-size: 11px; color: rgba(255,255,255,0.4); }
+.name-pill.active { background: rgba(201,168,76,0.15); border-color: var(--gold); }
+.name-pill.active strong { color: var(--gold); }
+.name-pill:hover:not(.active) { border-color: rgba(201,168,76,0.4); }
+
+/* Toggles */
+.include-group { display: flex; flex-direction: column; gap: 8px; }
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 13px; color: rgba(255,255,255,0.75); cursor: pointer;
+}
+.toggle {
+  width: 32px; height: 18px; background: rgba(255,255,255,0.12);
+  border-radius: 9px; position: relative; transition: background 0.2s; flex-shrink: 0;
+}
+.toggle.on { background: var(--gold); }
+.toggle::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; background: white;
+  border-radius: 50%; transition: transform 0.2s;
+}
+.toggle.on::after { transform: translateX(14px); }
+
+.btn-generate {
+  width: 100%; padding: 13px; background: var(--gold); color: var(--black);
+  border: none; border-radius: var(--radius); font-family: 'Source Sans 3', sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s; margin-top: 4px;
+}
+.btn-generate:hover { background: var(--gold-light); }
+.btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.status { font-size: 12px; color: var(--light); text-align: center; font-style: italic; min-height: 18px; }
+.status.active { color: var(--gold-light); }
+.status.error { color: #e07070; font-style: normal; }
+
+/* ── MAIN ── */
+.main { padding: 40px 44px 60px; background: var(--offwhite); }
+
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 60vh; text-align: center; color: var(--light);
+}
+.empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+.empty-state h2 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--mid); margin-bottom: 8px; }
+.empty-state p { font-size: 14px; max-width: 320px; }
+
+/* ── ACTION TOOLBAR ── */
+.toolbar {
+  display: none;
+  background: var(--black);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 28px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.toolbar-label { font-size: 13px; color: rgba(255,255,255,0.6); flex: 1; min-width: 160px; }
+.toolbar-label strong { color: var(--gold); }
+.toolbar-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.btn-tool {
+  padding: 8px 16px; border: none; border-radius: var(--radius);
+  font-family: 'Source Sans 3', sans-serif; font-size: 11px;
+  font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.btn-tool.primary { background: var(--gold); color: var(--black); }
+.btn-tool.primary:hover { background: var(--gold-light); }
+.btn-tool.secondary { background: rgba(255,255,255,0.1); color: var(--white); }
+.btn-tool.secondary:hover { background: rgba(255,255,255,0.2); }
+.btn-tool.success { background: #2d6a4f; color: white; }
+
+/* ══════════════════════════
+   PRINTABLE DOCUMENT
+══════════════════════════ */
+#bibDoc { display: none; }
+
+.bib-page {
+  background: var(--white);
+  width: 100%; max-width: 760px;
+  margin: 0 auto 24px;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+}
+
+/* Cover */
+.cover { min-height: 520px; display: flex; flex-direction: column; }
+.cover-top { background: var(--black); color: var(--white); padding: 48px 48px 40px; flex: 1; }
+.cover-eyebrow { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); margin-bottom: 16px; font-weight: 600; }
+.cover-title { font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 700; color: var(--white); line-height: 1.15; margin-bottom: 8px; }
+.cover-role { font-family: 'Playfair Display', serif; font-style: italic; font-size: 17px; color: var(--gold-light); margin-bottom: 28px; }
+.cover-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.cover-tag { padding: 4px 12px; border: 1px solid rgba(201,168,76,0.4); border-radius: 2px; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+.cover-bottom { background: var(--gold); padding: 18px 48px; display: flex; align-items: center; justify-content: space-between; }
+.cover-bottom span { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--black); font-weight: 700; }
+
+/* Sections */
+.sec-page { padding: 44px 48px; }
+.page-header { display: flex; align-items: baseline; gap: 14px; border-bottom: 2px solid var(--black); padding-bottom: 12px; margin-bottom: 28px; }
+.page-header h2 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--black); }
+.page-num { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--light); margin-left: auto; }
+
+.stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.stat-box { border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 15px; }
+.stat-box.full { grid-column: 1 / -1; }
+.stat-lbl { font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold); font-weight: 700; margin-bottom: 5px; }
+.stat-val { font-size: 14px; color: var(--offblack); line-height: 1.5; }
+
+.txt-block { border-left: 3px solid var(--gold); padding: 14px 18px; margin-bottom: 14px; background: var(--offwhite); }
+.txt-lbl { font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold); font-weight: 700; margin-bottom: 6px; }
+.txt-val { font-size: 14px; color: var(--offblack); line-height: 1.7; }
+.txt-val em { font-family: 'Playfair Display', serif; font-style: italic; font-size: 15px; }
+
+.arc-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.arc-node { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; position: relative; overflow: hidden; }
+.arc-node::before { content: attr(data-n); position: absolute; bottom: -8px; right: 6px; font-family: 'Playfair Display', serif; font-size: 48px; font-weight: 700; color: var(--border); line-height: 1; }
+.arc-lbl { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--black); font-weight: 700; margin-bottom: 6px; }
+.arc-val { font-size: 13px; line-height: 1.55; color: var(--offblack); position: relative; z-index: 1; }
+
+.char-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 12px; }
+.char-card-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.char-card-name { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: var(--black); }
+.char-card-role { font-size: 12px; color: var(--gold); font-weight: 600; letter-spacing: 0.5px; }
+.char-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.mini-stat .mini-lbl { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--light); font-weight: 600; margin-bottom: 3px; }
+.mini-stat .mini-val { font-size: 13px; line-height: 1.45; }
+.char-voice { font-family: 'Playfair Display', serif; font-style: italic; font-size: 14px; color: var(--mid); border-top: 1px solid var(--border); padding-top: 8px; margin-top: 6px; }
+
+.page-footer { background: var(--offwhite); border-top: 1px solid var(--border); padding: 10px 48px; display: flex; justify-content: space-between; align-items: center; }
+.page-footer span { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--light); }
+
+/* ── HOW TO USE ── */
+.how-to { margin-top: 48px; border-top: 2px solid var(--black); padding-top: 32px; }
+.how-to-inner { max-width: 760px; margin: 0 auto; }
+.how-to-title { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--black); margin-bottom: 24px; }
+.how-to-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.how-step { display: flex; gap: 14px; align-items: flex-start; }
+.step-num { font-family: 'Playfair Display', serif; font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 1px; flex-shrink: 0; padding-top: 2px; width: 22px; }
+.how-step p { font-size: 13px; line-height: 1.65; color: var(--mid); }
+.how-step p strong { color: var(--black); font-weight: 600; }
+.how-step p em { font-style: italic; color: var(--offblack); }
+
+/* ── PRINT ── */
+@page { margin: 0.4in; size: letter; }
+@media print {
+  body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .app-wrap { display: block; }
+  .sidebar, .toolbar, .how-to, .empty-state { display: none !important; }
+  .main { padding: 0; }
+  .bib-page { box-shadow: none; margin: 0 0 0 0; page-break-after: always; break-after: page; max-width: 100%; }
+  #bibDoc { display: block !important; }
+  .cover-top { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .cover-bottom { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 720px) {
+  .app-wrap { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; }
+  .main { padding: 28px 20px 48px; }
+  .stat-row, .arc-row, .char-card-grid, .how-to-grid { grid-template-columns: 1fr; }
+  .cover-title { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+<div class="app-wrap">
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside class="sidebar">
+  <div class="logo">
+    <p class="logo-mark">✦ Production Tool</p>
+    <h1>Character Bible<br>Builder</h1>
+    <p>Fantasy &amp; Sci-Fi · All Age Groups</p>
+  </div>
+
+  <div class="field-group">
+
+    <!-- AUTHOR OVERRIDE -->
+    <div class="override-box">
+      <label style="display:block;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;font-weight:600;">
+        ✦ Author Override
+        <span id="overrideBadge" class="override-active-badge" style="display:none;">Active</span>
+      </label>
+      <textarea id="authorOverride" placeholder="Describe your own setting, archetype, flaw, and/or tone in your own words. When filled in, this overrides the dropdowns below.&#10;&#10;e.g. Cozy magic shop in a rainy port city, owner who can't let go of a lost love, bittersweet and quietly funny." oninput="checkOverride()"></textarea>
+      <p class="override-note">Leave blank to use the dropdowns. Anything you type here takes full priority.</p>
+    </div>
+
+    <div class="field">
+      <label>Setting</label>
+      <select id="setting">
+        <optgroup label="Fantasy">
+          <option value="epic fantasy">Epic Fantasy</option>
+          <option value="dark fantasy">Dark Fantasy</option>
+          <option value="portal fantasy">Portal Fantasy</option>
+          <option value="cozy fantasy">Cozy Fantasy</option>
+          <option value="gaslamp fantasy">Gaslamp Fantasy</option>
+          <option value="mythpunk">Mythpunk</option>
+          <option value="secondary world fantasy">Secondary World Fantasy</option>
+          <option value="weird west">Weird West</option>
+          <option value="underwater / oceanic world">Underwater / Oceanic World</option>
+          <option value="fae / faerie realm">Fae / Faerie Realm</option>
+          <option value="gothic fantasy">Gothic Fantasy</option>
+        </optgroup>
+        <optgroup label="Science Fiction">
+          <option value="space opera">Space Opera</option>
+          <option value="dystopian future">Dystopian Future</option>
+          <option value="solarpunk">Solarpunk</option>
+          <option value="cyberpunk">Cyberpunk</option>
+          <option value="biopunk">Biopunk</option>
+          <option value="post-apocalyptic">Post-Apocalyptic</option>
+          <option value="time travel">Time Travel</option>
+          <option value="LitRPG / GameLit">LitRPG / GameLit</option>
+          <option value="generation ship / deep space">Generation Ship / Deep Space</option>
+        </optgroup>
+        <optgroup label="Blend">
+          <option value="science fantasy">Science Fantasy</option>
+          <option value="steampunk">Steampunk</option>
+          <option value="dieselpunk">Dieselpunk</option>
+          <option value="contemporary fantasy">Contemporary Fantasy</option>
+          <option value="urban fantasy">Urban Fantasy</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Protagonist Archetype</label>
+      <select id="archetype">
+        <optgroup label="Classic">
+          <option value="reluctant hero">Reluctant Hero</option>
+          <option value="chosen one who rejects destiny">Chosen One Who Rejects Destiny</option>
+          <option value="outcast with hidden power">Outcast with Hidden Power</option>
+          <option value="scholar thrust into adventure">Scholar Thrust Into Adventure</option>
+          <option value="protector who loses what they guard">Protector Who Loses What They Guard</option>
+        </optgroup>
+        <optgroup label="Complex">
+          <option value="morally grey antihero">Morally Grey Antihero</option>
+          <option value="villain seeking redemption">Villain Seeking Redemption</option>
+          <option value="soldier questioning orders">Soldier Questioning Orders</option>
+          <option value="caregiver forced to fight">Caregiver Forced to Fight</option>
+          <option value="loner learning to lead">Loner Learning to Lead</option>
+        </optgroup>
+        <optgroup label="Unexpected">
+          <option value="trickster who must grow up">Trickster Who Must Grow Up</option>
+          <option value="child of prophecy who isn't special">Child of Prophecy Who Isn't Special</option>
+          <option value="the everyman witness pulled into chaos">The Everyman Witness</option>
+          <option value="the too-loyal friend who becomes the hero">The Too-Loyal Friend</option>
+          <option value="the one who was supposed to die">The One Who Was Supposed to Die</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Fatal Flaw</label>
+      <select id="flaw">
+        <optgroup label="Ego & Identity">
+          <option value="pride">Pride</option>
+          <option value="need for approval">Need for Approval</option>
+          <option value="perfectionism">Perfectionism</option>
+          <option value="jealousy">Jealousy</option>
+          <option value="martyr complex">Martyr Complex</option>
+        </optgroup>
+        <optgroup label="Fear & Doubt">
+          <option value="crippling self-doubt">Crippling Self-Doubt</option>
+          <option value="fear of failure">Fear of Failure</option>
+          <option value="fear of their own power">Fear of Their Own Power</option>
+          <option value="cowardice disguised as caution">Cowardice Disguised as Caution</option>
+          <option value="catastrophizing">Catastrophizing</option>
+        </optgroup>
+        <optgroup label="Relationship & Trust">
+          <option value="inability to trust others">Inability to Trust</option>
+          <option value="emotional detachment">Emotional Detachment</option>
+          <option value="obsession with the past">Obsession with the Past</option>
+          <option value="reckless impulsivity">Reckless Impulsivity</option>
+          <option value="people-pleasing at any cost">People-Pleasing at Any Cost</option>
+        </optgroup>
+        <optgroup label="Moral">
+          <option value="ends-justify-the-means thinking">Ends Justify the Means</option>
+          <option value="blind loyalty">Blind Loyalty</option>
+          <option value="inability to forgive">Inability to Forgive</option>
+          <option value="a hunger for power they deny">Hunger for Power They Deny</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Tone</label>
+      <select id="tone">
+        <optgroup label="Light">
+          <option value="hopeful and wonder-filled">Hopeful &amp; Wonder-Filled</option>
+          <option value="cozy and heartwarming">Cozy &amp; Heartwarming</option>
+          <option value="swashbuckling and fun">Swashbuckling &amp; Fun</option>
+          <option value="whimsical and absurdist">Whimsical &amp; Absurdist</option>
+        </optgroup>
+        <optgroup label="Serious">
+          <option value="epic and serious">Epic &amp; Serious</option>
+          <option value="gritty and grounded">Gritty &amp; Grounded</option>
+          <option value="tense and suspenseful">Tense &amp; Suspenseful</option>
+          <option value="mythic and timeless">Mythic &amp; Timeless</option>
+        </optgroup>
+        <optgroup label="Complex">
+          <option value="bittersweet">Bittersweet</option>
+          <option value="melancholic">Melancholic</option>
+          <option value="darkly comedic">Darkly Comedic</option>
+          <option value="emotionally raw and intimate">Emotionally Raw &amp; Intimate</option>
+          <option value="quietly unsettling">Quietly Unsettling</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Age Group</label>
+      <div class="pill-set" id="ageGroup">
+        <button class="pill" data-age="young children (ages 5–8)">5–8</button>
+        <button class="pill" data-age="middle grade (ages 8–12)">8–12</button>
+        <button class="pill active" data-age="preteen to early teen (ages 10–13)">10–13</button>
+        <button class="pill" data-age="young adult (ages 14–18)">14–18</button>
+        <button class="pill" data-age="adult">Adult</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Name Style</label>
+      <div class="name-pill-set" id="nameStyle">
+        <button class="name-pill" data-style="common and familiar — real-world names like Emma, James, or Lily that feel grounded and relatable">
+          <strong>Common &amp; Familiar</strong>
+          <span>Everyday real-world names — Emma, James, Lily</span>
+        </button>
+        <button class="name-pill active" data-style="trending — names popular in current YA and middle grade releases, fresh but recognizable">
+          <strong>Trending</strong>
+          <span>Popular in current YA/MG — fresh but familiar</span>
+        </button>
+        <button class="name-pill" data-style="original and grounded — invented names that feel real, are easy to pronounce, and could exist in this world">
+          <strong>Original &amp; Grounded</strong>
+          <span>Invented but believable — easy to say, fits the world</span>
+        </button>
+        <button class="name-pill" data-style="wildly original and outrageously strange — unexpected, exotic, unforgettable names that could only exist in fantasy">
+          <strong>Wildly Original</strong>
+          <span>Strange, exotic, unforgettable — pure fantasy</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Project / Client Name <span style="color:var(--light);font-size:10px;">(optional)</span></label>
+      <input type="text" id="projectName" placeholder="e.g. The Wayward Stars" />
+    </div>
+
+  </div>
+
+  <div class="field">
+    <label>Include in Bible</label>
+    <div class="include-group">
+      <label class="toggle-row"><span>Supporting Cast</span><div class="toggle on" id="tog-cast" onclick="toggleOpt(this)"></div></label>
+      <label class="toggle-row"><span>Antagonist / Foil</span><div class="toggle on" id="tog-villain" onclick="toggleOpt(this)"></div></label>
+      <label class="toggle-row"><span>Character Arc</span><div class="toggle on" id="tog-arc" onclick="toggleOpt(this)"></div></label>
+      <label class="toggle-row"><span>Voice Samples</span><div class="toggle on" id="tog-voice" onclick="toggleOpt(this)"></div></label>
+    </div>
+  </div>
+
+  <button class="btn-generate" id="genBtn" onclick="buildBible()">✦ Build Character Bible</button>
+  <p class="status" id="status"></p>
+</aside>
+
+<!-- ══════════ MAIN ══════════ -->
+<main class="main">
+
+  <div class="empty-state" id="emptyState">
+    <div class="icon">✦</div>
+    <h2>Your character bible will appear here</h2>
+    <p>Configure your parameters in the sidebar and click Build Character Bible to generate a full, print-ready document.</p>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar" id="toolbar">
+    <p class="toolbar-label">Ready — <strong id="tlName"></strong></p>
+    <div class="toolbar-btns">
+      <button class="btn-tool primary" onclick="downloadPDF()">⬇ Save as PDF</button>
+      <button class="btn-tool secondary" id="copyBtn" onclick="copyText()">⊞ Copy Text</button>
+    </div>
+  </div>
+
+  <div id="bibDoc"></div>
+
+  <!-- HOW TO USE -->
+  <div class="how-to" id="howTo">
+    <div class="how-to-inner">
+      <p class="how-to-title">✦ How to Use This Tool</p>
+      <div class="how-to-grid">
+        <div class="how-step"><span class="step-num">01</span><p><strong>Author Override</strong> (top of sidebar) lets you describe your own setting, archetype, flaw, and tone in plain language. When filled in, it overrides all dropdowns. Leave it blank to use the dropdowns normally.</p></div>
+        <div class="how-step"><span class="step-num">02</span><p><strong>Set your parameters</strong> using the dropdowns — expanded with grouped options for Setting, Archetype, Fatal Flaw, and Tone. Add a project or client name if you like; it appears on the cover and footers.</p></div>
+        <div class="how-step"><span class="step-num">03</span><p><strong>Toggle sections on or off</strong> using the Include in Bible switches. Turn off Supporting Cast or Antagonist for a protagonist-only bible, or keep all on for a full ensemble package.</p></div>
+        <div class="how-step"><span class="step-num">04</span><p><strong>Click Build Character Bible.</strong> The AI generates your full document in seconds — cover page, protagonist sheet, character arc, supporting cast, and antagonist, all formatted and ready.</p></div>
+        <div class="how-step"><span class="step-num">05</span><p><strong>Save as PDF</strong> opens your browser print dialog. Set destination to <em>Save as PDF</em> and margins to <em>None</em> or <em>Minimum</em> for the cleanest output. Use Chrome or Edge for best results.</p></div>
+        <div class="how-step"><span class="step-num">06</span><p><strong>Copy Text</strong> puts a clean, formatted plain-text version on your clipboard — ready to paste into an email, Google Doc, or Canva template for further design work.</p></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// ── Toggles ──
+function toggleOpt(el) { el.classList.toggle('on'); }
+function isOn(id) { return document.getElementById(id).classList.contains('on'); }
+
+// Age pills
+document.querySelectorAll('#ageGroup .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#ageGroup .pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+  });
+});
+
+// Name style pills
+document.querySelectorAll('.name-pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.name-pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+  });
+});
+
+function getAge() {
+  const a = document.querySelector('#ageGroup .pill.active');
+  return a ? a.dataset.age : 'preteen to early teen (ages 10–13)';
+}
+function getNameStyle() {
+  const n = document.querySelector('.name-pill.active');
+  return n ? n.dataset.style : 'trending — names popular in current YA and middle grade releases';
+}
+
+// Show/hide override badge
+function checkOverride() {
+  const val = document.getElementById('authorOverride').value.trim();
+  const badge = document.getElementById('overrideBadge');
+  badge.style.display = val ? 'inline-block' : 'none';
+}
+
+// ── Store plain text for copy ──
+let plainTextBible = '';
+let currentBib = null;
+let currentOpts = null;
+
+// ── BUILD ──
+async function buildBible() {
+  const override   = document.getElementById('authorOverride').value.trim();
+  const setting    = document.getElementById('setting').value;
+  const archetype  = document.getElementById('archetype').value;
+  const flaw       = document.getElementById('flaw').value;
+  const tone       = document.getElementById('tone').value;
+  const ageGroup   = getAge();
+  const nameStyle  = getNameStyle();
+  const project    = document.getElementById('projectName').value.trim();
+  const incCast    = isOn('tog-cast');
+  const incVillain = isOn('tog-villain');
+  const incArc     = isOn('tog-arc');
+  const incVoice   = isOn('tog-voice');
+
+  // Build the character description — override takes full priority
+  const charDesc = override
+    ? `AUTHOR DESCRIPTION (use this exactly, ignore the dropdowns below):\n${override}`
+    : `Setting: ${setting}\nProtagonist archetype: ${archetype}\nFatal flaw: ${flaw}\nTone: ${tone}`;
+
+  // Labels for cover tags — use override summary or dropdown values
+  const coverSetting   = override ? 'Author Custom' : setting;
+  const coverArchetype = override ? 'Custom Archetype' : archetype;
+  const coverTone      = override ? 'Custom Tone' : tone;
+
+  const btn = document.getElementById('genBtn');
+  const st  = document.getElementById('status');
+  btn.disabled = true;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('bibDoc').innerHTML = '';
+  document.getElementById('bibDoc').style.display = 'none';
+  document.getElementById('toolbar').style.display = 'none';
+
+  st.className = 'status active';
+  st.textContent = 'Generating characters…';
+
+  // Random seed to force name variety
+  const seedWords = ["stone","river","iron","ash","ember","frost","thorn","cedar","flint","moss","cinder","tide","gale","oak","silver","copper","raven","hawk","winter","dawn","dusk","echo","vale","marsh","cloud","spark","forge","hollow","drift","crane","fern","birch","salt","coal","bell","reed","grove","peak","swift","brook"];
+  const seed1 = seedWords[Math.floor(Math.random() * seedWords.length)];
+  const seed2 = seedWords[Math.floor(Math.random() * seedWords.length)];
+  const bannedNames = "Seren, Mara, Kael, Lyra, Elara, Asha, Zara, Nora, Aria, Kira, Theron, Dax, Ryn, Lena, Sera, Mira, Aiden, Rowan, Cael, Vesper, Sable, Ember, Ash, Storm, Blade";
+
+  const prompt = `You are an expert fiction development specialist. Create a rich, original, fully realized character bible aimed at ${ageGroup} readers.
+
+${charDesc}
+Name style for ALL characters: ${nameStyle}
+
+NAMING RULES — these are mandatory:
+- BANNED NAMES (never use these or close variations): ${bannedNames}
+- Use these seed concepts for inspiration when inventing names: "${seed1}", "${seed2}" — draw on their sound, texture, or cultural feel, but do not use them literally
+- Names must feel genuinely fresh and distinct from each other
+- No two characters in this bible may share a first-letter initial
+- CRITICAL: Every character name MUST follow the name style exactly. Do not mix styles.
+
+Avoid all clichés. Make every character specific, surprising, and emotionally grounded. All content must be age-appropriate for ${ageGroup}.
+
+Respond ONLY with valid JSON. No markdown fences, no extra text, no explanation before or after:
+{
+  "protagonist": {
+    "name": "full name matching the name style",
+    "initials": "2 uppercase initials",
+    "role": "vivid one-line role/title",
+    "age": "specific age appropriate for ${ageGroup}",
+    "ability": "specific core power, skill, or trait — not generic",
+    "motivation": "surface-level goal they consciously pursue",
+    "secret": "a secret or hidden truth about them",
+    "summary": "two evocative sentences — show don't tell",
+    "wound": "Their core emotional wound in one sentence.",
+    "want": "What they consciously want — one sentence.",
+    "need": "What they actually need to grow — one sentence.",
+    "arcBegin": "Where they start emotionally and situationally — one sentence.",
+    "arcTurn": "The moment of no return that forces change — one sentence.",
+    "arcEnd": "Who they become by the end — earned, not handed — one sentence.",
+    "voice": "One line of dialogue only this character would say"
+  }${incCast ? `,
+  "cast": [
+    {
+      "name": "full name matching the name style",
+      "role": "Best Friend / Ally",
+      "relationship": "how they know the protagonist",
+      "trait": "defining characteristic",
+      "tension": "what complicates this relationship",
+      "voice": "one line of their dialogue"
+    },
+    {
+      "name": "full name matching the name style",
+      "role": "Mentor Figure",
+      "relationship": "how they know the protagonist",
+      "trait": "defining characteristic",
+      "tension": "what complicates this relationship",
+      "voice": "one line of their dialogue"
+    },
+    {
+      "name": "full name matching the name style",
+      "role": "Wild Card",
+      "relationship": "how they know the protagonist",
+      "trait": "defining characteristic",
+      "tension": "what complicates this relationship",
+      "voice": "one line of their dialogue"
+    }
+  ]` : ''}${incVillain ? `,
+  "antagonist": {
+    "name": "full name matching the name style",
+    "role": "vivid one-line role/title",
+    "motivation": "what they genuinely want — not just to destroy",
+    "belief": "the core belief that drives them — could be understandable",
+    "flaw": "their fatal flaw — should mirror or contrast the protagonist's",
+    "foilNote": "one sentence on how they specifically challenge the protagonist to grow",
+    "voice": "one line only this character would say"
+  }` : ''}
+}`;
+
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, max_tokens: 2000 })
+    });
+    if (!res.ok) {
+      let errDetail = `Status ${res.status}`;
+      try { const e = await res.json(); if (e?.error) errDetail = e.error; } catch(_) {}
+      throw new Error(errDetail);
+    }
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const raw  = data.text || '';
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const bib  = JSON.parse(clean);
+
+    currentBib  = bib;
+    currentOpts = { setting: coverSetting, archetype: coverArchetype, flaw, tone: coverTone, ageGroup, nameStyle, project, incArc, incVoice, incCast, incVillain, override };
+
+    st.textContent = 'Rendering document…';
+    renderBible(bib, currentOpts);
+    buildPlainText(bib, currentOpts);
+
+    st.textContent = '✦ Done!';
+    setTimeout(() => { st.textContent = ''; st.className = 'status'; }, 3000);
+  } catch(e) {
+    st.className = 'status error';
+    st.textContent = 'Generation failed — check connection and retry.';
+    document.getElementById('emptyState').style.display = 'flex';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── RENDER HTML ──
+function renderBible(bib, opts) {
+  const p     = bib.protagonist;
+  const proj  = opts.project || `${p.name} — Character Bible`;
+  const today = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  let html    = '';
+  let pageNum = 1;
+
+  // Cover
+  html += `
+  <div class="bib-page cover">
+    <div class="cover-top">
+      <p class="cover-eyebrow">Character Bible</p>
+      <h1 class="cover-title">${esc(p.name)}</h1>
+      <p class="cover-role">${esc(p.role)}</p>
+      <div class="cover-tags">
+        <span class="cover-tag">${esc(opts.setting)}</span>
+        <span class="cover-tag">${esc(opts.ageGroup)}</span>
+        <span class="cover-tag">${esc(opts.tone)}</span>
+        <span class="cover-tag">${esc(opts.archetype)}</span>
+      </div>
+    </div>
+    <div class="cover-bottom">
+      <span>${esc(proj)}</span>
+      <span>${today}</span>
+    </div>
+  </div>`;
+
+  // Protagonist
+  const pn = String(pageNum++).padStart(2,'0');
+  html += `
+  <div class="bib-page sec-page">
+    <div class="page-header"><h2>Protagonist</h2><span class="page-num">${pn}</span></div>
+    <div class="stat-row">
+      <div class="stat-box"><p class="stat-lbl">Full Name</p><p class="stat-val">${esc(p.name)}</p></div>
+      <div class="stat-box"><p class="stat-lbl">Age</p><p class="stat-val">${esc(p.age)}</p></div>
+      <div class="stat-box"><p class="stat-lbl">Core Ability</p><p class="stat-val">${esc(p.ability)}</p></div>
+      <div class="stat-box"><p class="stat-lbl">Surface Motivation</p><p class="stat-val">${esc(p.motivation)}</p></div>
+      <div class="stat-box full"><p class="stat-lbl">Secret / Hidden Truth</p><p class="stat-val">${esc(p.secret)}</p></div>
+    </div>
+    <div class="txt-block"><p class="txt-lbl">Character Summary</p><p class="txt-val">${esc(p.summary)}</p></div>
+    <div class="txt-block"><p class="txt-lbl">Emotional Wound</p><p class="txt-val">${esc(p.wound)}</p></div>
+    <div class="stat-row">
+      <div class="stat-box"><p class="stat-lbl">Want</p><p class="stat-val">${esc(p.want)}</p></div>
+      <div class="stat-box"><p class="stat-lbl">Need</p><p class="stat-val">${esc(p.need)}</p></div>
+    </div>
+    ${opts.incVoice ? `<div class="txt-block"><p class="txt-lbl">Voice Sample</p><p class="txt-val"><em>"${esc(p.voice)}"</em></p></div>` : ''}
+    <div class="page-footer"><span>${esc(proj)}</span><span>Character Bible · Protagonist</span></div>
+  </div>`;
+
+  // Arc
+  if (opts.incArc) {
+    const an = String(pageNum++).padStart(2,'0');
+    html += `
+    <div class="bib-page sec-page">
+      <div class="page-header"><h2>Character Arc</h2><span class="page-num">${an}</span></div>
+      <div class="arc-row">
+        <div class="arc-node" data-n="I"><p class="arc-lbl">Beginning</p><p class="arc-val">${esc(p.arcBegin)}</p></div>
+        <div class="arc-node" data-n="II"><p class="arc-lbl">Turning Point</p><p class="arc-val">${esc(p.arcTurn)}</p></div>
+        <div class="arc-node" data-n="III"><p class="arc-lbl">Resolution</p><p class="arc-val">${esc(p.arcEnd)}</p></div>
+      </div>
+      <div class="txt-block">
+        <p class="txt-lbl">Arc in Context</p>
+        <p class="txt-val"><strong>${esc(p.name)}</strong> begins as ${esc(p.arcBegin.toLowerCase().replace(/^they /,'someone who '))} The turning point forces a reckoning: ${esc(p.arcTurn.toLowerCase())} By the end, ${esc(p.arcEnd.toLowerCase())}</p>
+      </div>
+      <div class="page-footer"><span>${esc(proj)}</span><span>Character Bible · Arc</span></div>
+    </div>`;
+  }
+
+  // Supporting Cast
+  if (opts.incCast && bib.cast) {
+    const cn = String(pageNum++).padStart(2,'0');
+    let castHtml = '';
+    bib.cast.forEach(c => {
+      castHtml += `
+      <div class="char-card">
+        <div class="char-card-header">
+          <span class="char-card-name">${esc(c.name)}</span>
+          <span class="char-card-role">${esc(c.role)}</span>
+        </div>
+        <div class="char-card-grid">
+          <div class="mini-stat"><p class="mini-lbl">Relationship</p><p class="mini-val">${esc(c.relationship)}</p></div>
+          <div class="mini-stat"><p class="mini-lbl">Defining Trait</p><p class="mini-val">${esc(c.trait)}</p></div>
+          <div class="mini-stat" style="grid-column:1/-1"><p class="mini-lbl">Source of Tension</p><p class="mini-val">${esc(c.tension)}</p></div>
+        </div>
+        ${opts.incVoice ? `<p class="char-voice">"${esc(c.voice)}"</p>` : ''}
+      </div>`;
+    });
+    html += `
+    <div class="bib-page sec-page">
+      <div class="page-header"><h2>Supporting Cast</h2><span class="page-num">${cn}</span></div>
+      ${castHtml}
+      <div class="page-footer"><span>${esc(proj)}</span><span>Character Bible · Supporting Cast</span></div>
+    </div>`;
+  }
+
+  // Antagonist
+  if (opts.incVillain && bib.antagonist) {
+    const vn = String(pageNum++).padStart(2,'0');
+    const v  = bib.antagonist;
+    html += `
+    <div class="bib-page sec-page">
+      <div class="page-header"><h2>Antagonist</h2><span class="page-num">${vn}</span></div>
+      <div class="char-card">
+        <div class="char-card-header">
+          <span class="char-card-name">${esc(v.name)}</span>
+          <span class="char-card-role">${esc(v.role)}</span>
+        </div>
+        <div class="char-card-grid">
+          <div class="mini-stat"><p class="mini-lbl">Motivation</p><p class="mini-val">${esc(v.motivation)}</p></div>
+          <div class="mini-stat"><p class="mini-lbl">Fatal Flaw</p><p class="mini-val">${esc(v.flaw)}</p></div>
+          <div class="mini-stat" style="grid-column:1/-1"><p class="mini-lbl">Core Belief</p><p class="mini-val">${esc(v.belief)}</p></div>
+        </div>
+        <div style="padding:10px 0 4px;">
+          <p class="mini-lbl" style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px;">Narrative Foil</p>
+          <p style="font-size:13px;line-height:1.55;">${esc(v.foilNote)}</p>
+        </div>
+        ${opts.incVoice ? `<p class="char-voice">"${esc(v.voice)}"</p>` : ''}
+      </div>
+      <div class="page-footer"><span>${esc(proj)}</span><span>Character Bible · Antagonist</span></div>
+    </div>`;
+  }
+
+  const doc = document.getElementById('bibDoc');
+  doc.innerHTML = html;
+  doc.style.display = 'block';
+
+  const proj2 = opts.project || `${p.name} — Character Bible`;
+  const tb = document.getElementById('toolbar');
+  tb.style.display = 'flex';
+  document.getElementById('tlName').textContent = proj2;
+
+  doc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── BUILD PLAIN TEXT ──
+function buildPlainText(bib, opts) {
+  const p     = bib.protagonist;
+  const proj  = opts.project || `${p.name} — Character Bible`;
+  const today = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const line  = '─'.repeat(56);
+  const dline = '═'.repeat(56);
+
+  let t = '';
+  t += `${dline}\n`;
+  t += `  CHARACTER BIBLE\n`;
+  t += `  ${proj.toUpperCase()}\n`;
+  t += `  ${today}\n`;
+  t += `${dline}\n\n`;
+  t += `  Setting: ${opts.setting}  ·  Tone: ${opts.tone}\n`;
+  t += `  Age Group: ${opts.ageGroup}  ·  Archetype: ${opts.archetype}\n\n`;
+
+  // Protagonist
+  t += `${line}\n01  PROTAGONIST\n${line}\n\n`;
+  t += `Name ............. ${p.name}\n`;
+  t += `Role ............. ${p.role}\n`;
+  t += `Age .............. ${p.age}\n`;
+  t += `Core Ability ..... ${p.ability}\n`;
+  t += `Motivation ....... ${p.motivation}\n`;
+  t += `Secret ........... ${p.secret}\n\n`;
+  t += `SUMMARY\n${p.summary}\n\n`;
+  t += `EMOTIONAL WOUND\n${p.wound}\n\n`;
+  t += `Want: ${p.want}\n`;
+  t += `Need: ${p.need}\n`;
+  if (opts.incVoice) t += `\nVoice: "${p.voice}"\n`;
+
+  // Arc
+  if (opts.incArc) {
+    t += `\n${line}\n02  CHARACTER ARC\n${line}\n\n`;
+    t += `Beginning ........ ${p.arcBegin}\n`;
+    t += `Turning Point .... ${p.arcTurn}\n`;
+    t += `Resolution ....... ${p.arcEnd}\n`;
+  }
+
+  // Cast
+  if (opts.incCast && bib.cast) {
+    t += `\n${line}\n03  SUPPORTING CAST\n${line}\n`;
+    bib.cast.forEach(c => {
+      t += `\n${c.name.toUpperCase()} — ${c.role}\n`;
+      t += `Relationship ..... ${c.relationship}\n`;
+      t += `Defining Trait ... ${c.trait}\n`;
+      t += `Source of Tension  ${c.tension}\n`;
+      if (opts.incVoice) t += `Voice: "${c.voice}"\n`;
+    });
+  }
+
+  // Antagonist
+  if (opts.incVillain && bib.antagonist) {
+    const v = bib.antagonist;
+    t += `\n${line}\n04  ANTAGONIST\n${line}\n\n`;
+    t += `Name ............. ${v.name}\n`;
+    t += `Role ............. ${v.role}\n`;
+    t += `Motivation ....... ${v.motivation}\n`;
+    t += `Core Belief ...... ${v.belief}\n`;
+    t += `Fatal Flaw ....... ${v.flaw}\n`;
+    t += `Narrative Foil ... ${v.foilNote}\n`;
+    if (opts.incVoice) t += `Voice: "${v.voice}"\n`;
+  }
+
+  t += `\n${dline}\n`;
+  t += `  Generated with Character Bible Builder\n`;
+  t += `${dline}\n`;
+
+  plainTextBible = t;
+}
+
+// ── COPY TEXT ──
+function copyText() {
+  if (!plainTextBible) return;
+
+  const btn = document.getElementById('copyBtn');
+
+  // Method 1: modern clipboard API (works in HTTPS / browsers that allow it)
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(plainTextBible).then(() => {
+      flashCopied(btn);
+    }).catch(() => {
+      fallbackCopy(btn);
+    });
+  } else {
+    // Method 2: textarea execCommand fallback — works in local files & all browsers
+    fallbackCopy(btn);
+  }
+}
+
+function fallbackCopy(btn) {
+  const ta = document.createElement('textarea');
+  ta.value = plainTextBible;
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:2em;height:2em;padding:0;border:none;outline:none;box-shadow:none;background:transparent;opacity:0;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    const ok = document.execCommand('copy');
+    if (ok) { flashCopied(btn); }
+    else    { showCopyModal(); }
+  } catch(e) {
+    showCopyModal();
+  }
+  document.body.removeChild(ta);
+}
+
+function flashCopied(btn) {
+  btn.textContent = '✓ Copied!';
+  btn.classList.add('success');
+  setTimeout(() => {
+    btn.textContent = '⊞ Copy Text';
+    btn.classList.remove('success');
+  }, 2500);
+}
+
+// Last resort: show text in a modal so user can manually copy
+function showCopyModal() {
+  let modal = document.getElementById('copyModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'copyModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:4px;padding:28px;max-width:600px;width:100%;max-height:80vh;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <strong style="font-size:14px;letter-spacing:1px;text-transform:uppercase;">Select All &amp; Copy</strong>
+          <button onclick="document.getElementById('copyModal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:#999;">✕</button>
+        </div>
+        <textarea id="copyModalText" style="width:100%;height:340px;font-family:monospace;font-size:12px;line-height:1.5;border:1px solid #ddd;border-radius:3px;padding:12px;resize:none;"></textarea>
+        <p style="font-size:12px;color:#999;">Press <strong>Ctrl+A</strong> then <strong>Ctrl+C</strong> (or Cmd+A / Cmd+C on Mac) to copy all.</p>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  document.getElementById('copyModalText').value = plainTextBible;
+  modal.style.display = 'flex';
+  setTimeout(() => {
+    const ta = document.getElementById('copyModalText');
+    ta.focus(); ta.select();
+  }, 100);
+}
+
+// ── PDF ──
+function downloadPDF() {
+  const bibDoc = document.getElementById('bibDoc');
+  if (!bibDoc || bibDoc.style.display === 'none') return;
+
+  const btn = document.querySelector('.btn-tool.primary');
+  const origText = btn.textContent;
+  const scrollY = window.scrollY;
+
+  // Hide sidebar, toolbar, how-to
+  const toHide = [
+    document.querySelector('.sidebar'),
+    document.querySelector('.toolbar'),
+    document.querySelector('.how-to'),
+    document.querySelector('.empty-state'),
+  ].filter(Boolean);
+  const savedStyles = toHide.map(el => el.getAttribute('style') || '');
+  toHide.forEach(el => el.style.setProperty('display', 'none', 'important'));
+
+  const appWrap = document.querySelector('.app-wrap');
+  const mainEl  = document.querySelector('.main');
+  const savedApp  = appWrap ? appWrap.getAttribute('style')  || '' : '';
+  const savedMain = mainEl  ? mainEl.getAttribute('style')   || '' : '';
+  if (appWrap) appWrap.style.cssText = 'display:block;';
+  if (mainEl)  mainEl.style.cssText  = 'padding:0;background:white;';
+
+  // Restore after print dialog closes
+  window.addEventListener('afterprint', function onAfter() {
+    window.removeEventListener('afterprint', onAfter);
+    toHide.forEach((el, i) => {
+      if (savedStyles[i]) el.setAttribute('style', savedStyles[i]);
+      else el.removeAttribute('style');
+    });
+    if (appWrap) { if (savedApp)  appWrap.setAttribute('style', savedApp);  else appWrap.removeAttribute('style'); }
+    if (mainEl)  { if (savedMain) mainEl.setAttribute('style', savedMain);  else mainEl.removeAttribute('style'); }
+    btn.textContent = origText;
+    btn.disabled = false;
+    window.scrollTo({ top: scrollY, behavior: 'instant' });
+  });
+
+  // Fire synchronously — Chrome requires print in same call stack as click
+  window.print();
+}
+
+// ── ESCAPE ──
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
